@@ -1,4 +1,4 @@
-RSpec.describe Contently::Jwt do
+RSpec.describe Contently::Jwt::Middleware do
   it "has a version number" do
     expect(Contently::Jwt::VERSION).not_to be nil
   end

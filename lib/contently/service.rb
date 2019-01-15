@@ -4,16 +4,18 @@ require 'jwt'
 module Contently
   module Jwt
     class Service
-      def initialize(privateKeyPath)
-        @privateKeyPath = privateKeyPath
-      end
-
-      def private_key
-        OpenSSL::PKey::RSA.new File.read(@privateKeyPath);
+      attr_reader :private_key
+      def initialize(key)
+        @private_key = nil
+        @private_key = if key.is_a? OpenSSL::PKey::RSA
+                         key
+                       else
+                         OpenSSL::PKey::RSA.new File.read key
+                       end
       end
 
       def public_key
-        self.private_key.public_key
+        private_key.public_key
       end
 
       def encode(payload:)
@@ -21,7 +23,7 @@ module Contently
       end
 
       def decode(token, verify = true)
-        JWT.decode(token, self.public_key, verify, { algorithm: 'RS256'}).first
+        JWT.decode(token, public_key, verify, algorithm: 'RS256').first
       end
     end
   end

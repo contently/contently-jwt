@@ -2,6 +2,8 @@ require "bundler/setup"
 require "contently/jwt"
 require "contently/service"
 require "contently/middleware"
+require "contently/cookies_helper"
+require "contently/token_helper"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
