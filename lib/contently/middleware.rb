@@ -18,7 +18,8 @@ module Contently
       protected
 
       # Callbacks
-      def pre_complete(token_helper)
+      def allow?(env, request)
+        true
       end
 
       def should_handle?(env)
@@ -42,12 +43,14 @@ module Contently
         status, headers, response = time do
           request = AuthenticatedRequest.new(env, @app)
           request.pre
-          env = pre_complete(env, request)
-          status, headers, response = @app.call env
-          request.post(status,
-                       headers,
-                       response)
-
+          if allow?(env, request)
+            status, headers, response = @app.call env
+            request.post(status,
+                         headers,
+                         response)
+          else
+            ['401', {}, ['Not Authorized']]
+          end
         end
         [status, headers, response]
       end

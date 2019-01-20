@@ -14,7 +14,7 @@ class AuthenticatedRequest
   end
 
   def authenticated?
-    @token_processor.valid?
+    @token_processor.valid? || false
   end
 
   def request_uri
