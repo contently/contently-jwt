@@ -6,7 +6,7 @@ module Contently
     class JwtConnectionError < JwtError; end
     class Middleware
       def initialize(app)
-        puts 'JWTMiddleware Started'
+        puts 'Contently JWT Middleware Started'
         @app = app
         @service = Service.new(Contently::Jwt.config[:private_key_path])
       end
@@ -27,7 +27,6 @@ module Contently
       def should_handle?(env)
         ['.css', 'js'].each do |ext|
           if env['REQUEST_PATH'].include? ext
-            puts 'Excluded Request ' + env['REQUEST_PATH']
             return false
           end
         end

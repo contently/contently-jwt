@@ -59,7 +59,6 @@ module Contently
       end
 
       def expired?
-        puts "#{Time.now.to_i} > #{exp_time} = #{Time.now.to_i > exp_time}"
         Time.now.to_i > exp_time
       end
 

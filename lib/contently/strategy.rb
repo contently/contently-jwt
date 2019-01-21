@@ -29,7 +29,6 @@ module Contently
       end
 
       def authenticate!
-        puts "AUTHENTICATE"
         payload = @service.decode(token)
         success! find(payload['sub'])
       rescue ::JWT::ExpiredSignature
@@ -52,7 +51,6 @@ module Contently
         else
           token = request.cookies['token']
         end
-        puts "TOKEN #{token}"
         token
       end
     end

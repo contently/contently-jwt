@@ -12,7 +12,6 @@ RSpec.describe Contently::Jwt::Service do
 
     encoded = service.encode(payload: payload)
     decoded = service.decode(encoded)
-    puts payload, decoded
     expect(decoded[:username]).to be payload['username']
     expect(decoded[:user_Id]).to be payload['user_id']
     expect(service).not_to be nil
