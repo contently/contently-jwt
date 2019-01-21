@@ -30,15 +30,18 @@ module Contently
         req.body = { refreshToken: refresh_token }.to_json
         perform_request(uri, req) do |http, request|
           resp = http.request request
-          if (resp.code == 200)
-            body = resp.read_body
-            binding.pry
-            payload = JSON.parse(resp)
-            @cookies_helper['token'] = payload
-            return payload['token'] if payload['success']
-          end
+          process_refresh(resp)
         end
         nil
+      end
+
+      def process_refresh(resp)
+        if resp.code == "200"
+          body = resp.read_body
+          payload = JSON.parse(body)
+          @cookies_helper['token'] = payload["token"]
+          return payload['token'] if payload['success']
+        end
       end
 
       def decode_token

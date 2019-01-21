@@ -2,6 +2,8 @@ require_relative 'service'
 require_relative 'authenticated_request'
 module Contently
   module Jwt
+    class JwtError < StandardError; end
+    class JwtConnectionError < JwtError; end
     class Middleware
       def initialize(app)
         puts 'JWTMiddleware Started'
@@ -42,14 +44,18 @@ module Contently
       def gatekeeper(env)
         status, headers, response = time do
           request = AuthenticatedRequest.new(env, @app)
-          request.pre
-          if allow?(env, request)
-            status, headers, response = @app.call env
-            request.post(status,
-                         headers,
-                         response)
-          else
-            ['401', {}, ['Not Authorized']]
+          begin
+            request.pre
+            if allow?(env, request)
+              status, headers, response = @app.call env
+              request.post(status,
+                           headers,
+                           response)
+            else
+              ['401', {'x-reason'=>'Access Denied'}, ['Not Authorized']]
+            end
+          rescue SocketError
+            raise JwtConnectionError
           end
         end
         [status, headers, response]
