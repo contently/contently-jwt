@@ -1,4 +1,5 @@
 require_relative 'cookies_helper'
+require_relative 'headers_helper'
 require_relative 'token_helper'
 
 class AuthenticatedRequest
@@ -9,8 +10,10 @@ class AuthenticatedRequest
     @new_token = nil
     @env = env
     @app = app
+    # TODO: introduce dependency injection here
     @cookies_helper = Contently::Jwt::CookiesHelper.new(env)
-    @token_processor = Contently::Jwt::TokenHelper.new(@cookies_helper)
+    @headers_helper = Contently::Jwt::HeadersHelper.new(env)
+    @token_processor = Contently::Jwt::TokenHelper.new(@cookies_helper, @headers_helper)
   end
 
   def authenticated?
@@ -27,12 +30,10 @@ class AuthenticatedRequest
     end
   end
 
-  def handle_expiriation(token)
-    return token unless @token_processor.expired?
+  def handle_expiriation(_token)
+    return @token_processor.token unless @token_processor.expired?
 
-    if @token_processor.can_refresh?
-      @token_processor.refresh
-    end
+    @token_processor.refresh if @token_processor.can_refresh?
   end
 
   def pre_process
@@ -49,19 +50,28 @@ class AuthenticatedRequest
   end
 
   def pre
-    new_token = safe_preprocess
+    self.new_token = safe_preprocess
   end
 
   def new_token=(value)
+    raise 'Must be string' if value.is_a? Hash
+    if value && value.include?('{')
+      raise 'Bad Token Set--includes raw decoded token'
+    end
+
     @new_token = value
   end
 
   def post(status, headers, response)
     return [status, headers, response] if @new_token.nil?
 
-    response = Rack::Response.new response, status, headers
-    exp = (Time.now.utc + 24 * 60 * 60).strftime('%a, %d %b %Y %H:%M:%S GMT')
-    headers['Set-Cookie'] = "token=#{@new_token}; expires=#{exp}"
+    # TODO: Do we need to use a path other than / ?
+    headers['Set-Cookie'] =
+      "token=#{@new_token}; path=/; expires=#{expiration_time}"
     [status, headers, response]
+  end
+
+  def expiration_time
+    (Time.now.utc + 24 * 60 * 60).strftime('%a, %d %b %Y %H:%M:%S GMT')
   end
 end

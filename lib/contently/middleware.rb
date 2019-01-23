@@ -20,15 +20,13 @@ module Contently
       protected
 
       # Callbacks
-      def allow?(env, request)
+      def allow?(_env, _request)
         true
       end
 
       def should_handle?(env)
         ['.css', 'js'].each do |ext|
-          if env['REQUEST_PATH'].include? ext
-            return false
-          end
+          return false if env['REQUEST_PATH'].include? ext
         end
         true
       end
@@ -46,12 +44,13 @@ module Contently
           begin
             request.pre
             if allow?(env, request)
+
               status, headers, response = @app.call env
               request.post(status,
                            headers,
                            response)
             else
-              ['401', {'x-reason'=>'Access Denied'}, ['Not Authorized']]
+              ['401', { 'x-reason' => 'Access Denied' }, ['Not Authorized']]
             end
           rescue SocketError
             raise JwtConnectionError
@@ -65,7 +64,7 @@ module Contently
         [status, headers, response]
       end
 
-      def report(time_start, time_end, kind="request")
+      def report(time_start, time_end, kind = 'request')
         logstr = "#{kind} took #{(time_end - time_start) * 1000} ms"
         headerstr = ''
         (logstr.length + 4).times { headerstr << '=' }
@@ -73,7 +72,6 @@ module Contently
         puts "+ #{logstr} +"
         puts headerstr
       end
-
     end
   end
 end
