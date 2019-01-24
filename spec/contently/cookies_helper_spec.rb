@@ -1,5 +1,5 @@
 RSpec.describe Contently::Jwt::CookiesHelper do
-  it 'has a exists' do
+  it 'exists' do
     expect(Contently::Jwt::CookiesHelper).not_to be nil
   end
 

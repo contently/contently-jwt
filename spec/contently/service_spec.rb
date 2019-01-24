@@ -4,7 +4,7 @@ RSpec.describe Contently::Jwt::Service do
   end
 
   it "encodes/decodes correctly" do
-    service = Contently::Jwt::Service.new('../../certs/private.key')
+    service = Contently::Jwt::Service.new('./certs/private.key')
     payload = {
       username: 'someone@somewhere.com',
       user_id: 12

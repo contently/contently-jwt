@@ -5,10 +5,12 @@ module Contently
     class JwtError < StandardError; end
     class JwtConnectionError < JwtError; end
     class Middleware
-      def initialize(app)
+      def initialize(app, options = {})
         puts 'Contently JWT Middleware Started'
         @app = app
-        @service = Service.new(Contently::Jwt.config[:private_key_path])
+        puts options
+        @service = Service.new(options[:private_key_path] ||
+          Contently::Jwt.config[:private_key_path])
       end
 
       def call(env)
