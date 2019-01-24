@@ -36,24 +36,14 @@ module Contently
         nil
       end
 
-      def process_refresh(resp)
-        if resp.code == '200'
-          body = resp.read_body
-          payload = JSON.parse(body)
-          @cookies_helper['token'] = payload['token']
-          @headers_helper.authorization_header_token = payload['token']
-          return payload['token'] if payload['success']
-        end
-      end
-
-      def decode_token
-        return @service.decode(token, false) unless token.nil?
+      def decode_token(verify = true)
+        return @service.decode(token, verify) unless token.nil?
       rescue JWT::DecodeError => err
         puts "Token could not be decoded: #{err}"
       end
 
       def exp_time
-        decode_token['exp'].to_i
+        decode_token(false)['exp'].to_i
       end
 
       def valid?
@@ -72,6 +62,19 @@ module Contently
       def auth_refresh_uri
         URI(ENV['AUTH_REFRESH'] || decode_token['refreshUrl'])
       end
+
+      private
+
+      def process_refresh(resp)
+        if resp.code == '200'
+          body = resp.read_body
+          payload = JSON.parse(body)
+          @cookies_helper['token'] = payload['token']
+          @headers_helper.authorization_header_token = payload['token']
+          return payload['token'] if payload['success']
+        end
+      end
+
     end
   end
 end
