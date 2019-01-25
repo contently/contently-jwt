@@ -3,13 +3,16 @@ module Contently
   module Jwt
     class TokenHelper
       attr_accessor :env
+
       def initialize(cookies_helper, headers_helper, key = nil)
         @cookies_helper = cookies_helper
         @headers_helper = headers_helper
         @service = if key.nil?
+                     puts "Loading key #{Contently::Jwt.config[:private_key_path]}..."
                      Service.new(Contently::Jwt.config[:private_key_path])
                    else
-                     Service.new(key)
+                    puts "Key provided: #{Contently::Jwt.config[:private_key_path]}..."
+                    Service.new(key)
                    end
       end
 
