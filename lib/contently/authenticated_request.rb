@@ -1,11 +1,14 @@
+require 'lager'
 require_relative 'cookies_helper'
 require_relative 'headers_helper'
 require_relative 'token_helper'
-
 class AuthenticatedRequest
+  extend Lager
+  log_to $stdout, :debug
   attr_accessor :env, :token_processor
 
   def initialize(env, app)
+    @lager = self.class.lager
     @token_refreshed = false
     @new_token = nil
     @env = env
@@ -16,6 +19,10 @@ class AuthenticatedRequest
     @token_processor = Contently::Jwt::TokenHelper.new(@cookies_helper, @headers_helper)
   end
 
+  def debug(str)
+    @lager.debug("[authenticated-request]: #{str}")
+  end
+
   def authenticated?
     @token_processor.valid? || false
   end
@@ -24,23 +31,8 @@ class AuthenticatedRequest
     @env['REQUEST_URI']
   end
 
-  def perform_request(uri, req)
-    Net::HTTP.start(uri.hostname, uri.port) do |http|
-      yield(http, req)
-    end
-  end
-
-  def handle_expiriation(_token)
-    return @token_processor.token unless @token_processor.expired?
-
-    @token_processor.refresh if @token_processor.can_refresh?
-  end
-
   def pre_process
-    decoded_token = @token_processor.decode_token
-    return nil if decoded_token.nil?
-
-    handle_expiriation decoded_token
+    @token_processor.decode_token
   end
 
   def safe_preprocess
@@ -50,7 +42,7 @@ class AuthenticatedRequest
   end
 
   def pre
-    self.new_token = safe_preprocess
+    safe_preprocess
   end
 
   def new_token=(value)

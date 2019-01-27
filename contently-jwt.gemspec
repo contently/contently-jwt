@@ -44,6 +44,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'devise'
   spec.add_dependency 'devise-jwt'
   spec.add_dependency 'jwt'
+  spec.add_dependency 'lager'
   spec.add_dependency 'openssl'
   spec.add_dependency 'warden'
 end

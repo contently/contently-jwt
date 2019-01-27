@@ -4,16 +4,18 @@ module Contently
     class TokenHelper
       attr_accessor :env
 
-      def initialize(cookies_helper, headers_helper, key = nil)
+      def initialize(cookies_helper, headers_helper, key = nil, options = {})
+        puts "Token Helper Created"
         @cookies_helper = cookies_helper
         @headers_helper = headers_helper
         @service = if key.nil?
                      puts "Loading key #{Contently::Jwt.config[:private_key_path]}..."
                      Service.new(Contently::Jwt.config[:private_key_path])
                    else
-                    puts "Key provided: #{Contently::Jwt.config[:private_key_path]}..."
-                    Service.new(key)
+                     puts "Key provided: #{key}"
+                     Service.new(key)
                    end
+        @refresh_callback = options[:refresh_callback]
       end
 
       def token
@@ -30,7 +32,7 @@ module Contently
       def refresh
         uri = auth_refresh_uri
         req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
-        refresh_token = decode_token['refreshToken']
+        refresh_token = decode_token(false)['refreshToken']
         req.body = { refreshToken: refresh_token }.to_json
         perform_request(uri, req) do |http, request|
           resp = http.request request
@@ -41,6 +43,10 @@ module Contently
 
       def decode_token(verify = true)
         return @service.decode(token, verify) unless token.nil?
+      rescue JWT::ExpiredSignature
+        raise unless can_refresh?
+        refresh
+        @service.decode(token, verify) unless token.nil?
       rescue JWT::DecodeError => err
         puts "Token could not be decoded: #{err}"
       end
@@ -58,26 +64,29 @@ module Contently
       end
 
       def can_refresh?
-        decoded = decode_token
+        decoded = decode_token(false)
         decoded && !decoded['refreshToken'].nil?
       end
 
       def auth_refresh_uri
-        URI(ENV['AUTH_REFRESH'] || decode_token['refreshUrl'])
+        URI(ENV['AUTH_REFRESH'] || decode_token(false)['refreshUrl'])
       end
 
       private
 
-      def process_refresh(resp)
-        if resp.code == '200'
-          body = resp.read_body
-          payload = JSON.parse(body)
-          @cookies_helper['token'] = payload['token']
-          @headers_helper.authorization_header_token = payload['token']
-          return payload['token'] if payload['success']
-        end
+      def success?(code)
+        (200..299).include?(code.to_i)
       end
 
+      def process_refresh(resp)
+        return unless success?(resp.code)
+
+        body = resp.read_body
+        payload = JSON.parse(body)
+        @cookies_helper['token'] = payload['token']
+        @headers_helper.authorization_header_token = payload['token']
+        return payload['token'] if payload['success']
+      end
     end
   end
 end
